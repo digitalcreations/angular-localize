@@ -1,0 +1,60 @@
+{
+  "name": "angular-localize",
+  "version": "1.0.0",
+  "title": "angular-localize",
+  "description": "A localization module for AngularJS.",
+  "keywords": [
+    "angular",
+    "AngularJS",
+    "translation",
+    "localization",
+    "localisation",
+    "internationalization",
+    "internationalisation",
+    "i18n",
+    "L10n"
+  ],
+  "homepage": "https://github.com/blueimp/angular-localize",
+  "author": {
+    "name": "Sebastian Tschan",
+    "url": "https://blueimp.net"
+  },
+  "maintainers": [
+    {
+      "name": "Sebastian Tschan",
+      "url": "https://blueimp.net"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/blueimp/angular-localize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blueimp/angular-localize/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/MIT"
+    }
+  ],
+  "main": "Gruntfile.js",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "postinstall": "bower install",
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.4",
+    "grunt-contrib-jshint": "~0.9.2",
+    "grunt-contrib-uglify": "~0.4.0",
+    "grunt-bump-build-git": "~1.1.1",
+    "grunt-karma": "~0.8.2",
+    "karma": "~0.12.1",
+    "karma-jasmine": "~0.2.2",
+    "karma-phantomjs-launcher": "~0.1.2",
+    "karma-coverage": "~0.2.1"
+  }
+}
