@@ -68,7 +68,7 @@ An optional object with dynamic user data is passed as only argument to the tran
 #### How to automatically create the translation functions
 [grunt-locales](https://github.com/blueimp/grunt-locales), a plugin for the [Grunt](http://gruntjs.com/) task runner, provides command-line scripts to automate the creation of the translation functions.
 
-[grunt-locales](https://github.com/blueimp/grunt-locales) parses `localize` attributes in HTML files and collects the parsed locale strings in JSON files for translation.  
+[grunt-locales](https://github.com/blueimp/grunt-locales) parses `localize` attributes in HTML files as well as `localize` method calls in JS files and collects the parsed locale strings in JSON files for translation.  
 The translated JSON locale files are then compiled into JavaScript files containing the map of translation functions.
 
 To support translation features like pluralization and gender selection, [grunt-locales](https://github.com/blueimp/grunt-locales) relies on Alex Sexton's [MessageFormat](https://github.com/SlexAxton/messageformat.js) library to parse the locale strings and compile the translation functions.
@@ -160,7 +160,7 @@ angular.module('example')
     ]);
 ```
 
-Generally, it is preferable to use the `localize` directive instead of the service, as the directive can determine its security context and because the directive strings can be automatically parsed from the HTML templates with the [grunt-locales](https://github.com/blueimp/grunt-locales) task.
+Generally, it is preferable to use the `localize` directive instead of the service whenever possible, as the directive can determine its security context.
 
 ## License
 Released under the [MIT license](http://www.opensource.org/licenses/MIT).
