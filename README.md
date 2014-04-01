@@ -13,7 +13,10 @@
         - [Localize using the element content](#localize-using-the-element-content)
         - [Localize using the localize attribute](#localize-using-the-localize-attribute)
         - [Localize with dynamic user data](#localize-with-dynamic-user-data)
+        - [Configuring the observable directive attributes](#configuring-the-observable-directive-attributes)
     - [localize service](#localize-service)
+    - [Localize filter](#localize-filter)
+    - [Localize factory](#localize-factory)
 - [License](#license)
 
 ## Getting started
@@ -48,17 +51,21 @@ window.i18n = {
 The `localize` module uses this map to lookup the translation results.  
 If no matching translation function is found, the key is used as the translation result.
 
-Instead of storing the translation functions in a global object, it's also possible to decorate the `i18n` service:
+Instead of storing the translation functions in a global object, it's also possible to decorate the `localizeConfig` service to override the `i18n` configuration property:
 
 ```js
 angular.module('localize').config(['$provide', function ($provide) {
-    $provide.decorator('i18n', function () {
-        return {
+    $provide.decorator('localizeConfig', ['$delegate', function ($delegate) {
+        $delegate.i18n = {
+            Apples: function () {
+                return 'Äpfel';
+            },
             'Hello {name}!': function (data) {
                 return 'Hallo ' + data.name + '!';
             }
         };
-    });
+        return $delegate;
+    }]);
 }]);
 ```
 
@@ -126,6 +133,21 @@ This also works with the localization key as element content, which allows the u
 
 In this case, all dynamic user data is escaped (HTML special characters are replaced with their respective HTML entity) before it is passed to the translation function.
 
+#### Configuring the observable directive attributes
+By default, the `localize` directive only observes non-directive data-attributes, which are identified by the `observableAttrs` regular expression, a property of the `localizeConfig` service.  
+You can override the default setting by decorating the `localizeConfig` service:
+
+```js
+angular.module('localize').config(['$provide', function ($provide) {
+    $provide.decorator('localizeConfig', ['$delegate', function ($delegate) {
+        $delegate.observableAttrs = /^data-(?!ng-|localize)/;
+        return $delegate;
+    }]);
+}]);
+```
+
+The regular expression is matched against the non-normalized attribute names of the directive. The default setting will match any `data-*` attributes which are not followed by the strings `ng-` or `localize`.
+
 ### localize service
 The `localize` service is an equivalent to the `localize` directive and can be used to generate localized results in situations where the directive cannot be used:
 
@@ -160,7 +182,55 @@ angular.module('example')
     ]);
 ```
 
-Generally, it is preferable to use the `localize` directive instead of the service whenever possible, as the directive can determine its security context.
+Generally, it is preferable to use the `localize` directive instead of the service whenever possible, as the directive can determine its security context.  
+However, [grunt-locales](https://github.com/blueimp/grunt-locales) is able to parse both the directive attributes as well as the localize service calls.
+
+### localize filter
+The `localize` filter provides the same functionality as the service.  
+It can be useful in templates where the localization strings are dynamic, e.g. for error messages:
+
+```html
+<p>{{errorMessage | localize}}</p>
+```
+
+It is also possible to pass an object with localization arguments to the `localize` filter:
+
+```html
+<p>{{errorMessage | localize:data}}</p>
+```
+
+If the result of the localization is rendered as HTML, the localization arguments must be escaped by setting the second filter argument to `true`:
+
+```html
+<p ng-bind-html="errorMessage | localize:data:true"></p>
+```
+
+### localize factory
+The `localizeFactory` is a service to facilitate the creation of additional, attribute-based `localize` directives.
+
+Executing the `localizeFactory` function returns a [directive](http://docs.angularjs.org/guide/directive) definition object that identifies the attribute to update via its directive name.
+
+The following is the simple code required to create a `localize-title` directive:
+
+```js
+angular.module('example')
+    .directive('localizeTitle', ['localizeFactory', function (localizeFactory) {
+        return localizeFactory();
+    }]);
+```
+
+Directives created via the `localizeFactory` work the same way as the original `localize` directive, but instead of updating the element content, they update their associated HTML attribute.  
+
+The following is an example use of the created `localize-title` directive:
+
+```html
+<p data-name="{{user.name}}" localize-title="Hello {name}!"></p>
+```
+
+This directive will update the `title` attribute based on the translation function and provided user data.
+
+The updated attribute is always the directive name with the `localize-` prefix removed.  
+Therefore, as a convention, the directive name must always start with `localize` as prefix.
 
 ## License
 Released under the [MIT license](http://www.opensource.org/licenses/MIT).

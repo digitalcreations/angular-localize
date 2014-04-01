@@ -7,7 +7,7 @@
 
         // SECURITY CONTEXT:
         // This simple filter only properly sanitizes values
-        // that are printed between HTML tags, e.g.
+        // that are rendered between HTML tags, e.g.
         // <div>ESCAPED_CONTENT</div>
         // It will fall short when used in any other context,
         // e.g. within attributes not enclosed by double quotes
@@ -34,13 +34,19 @@
             };
         })
 
-        .factory('i18n', ['$window', function ($window) {
-            return $window.i18n;
+        .factory('localizeConfig', ['$window', function ($window) {
+            return {
+                i18n: $window.i18n,
+                // Only observe non-directive data-attributes:
+                observableAttrs: /^data-(?!ng-|localize)/
+            };
         }])
 
         .factory('localize', [
-            '$filter', 'i18n',
-            function ($filter, i18n) {
+            '$filter', 'localizeConfig',
+            function ($filter, localizeConfig) {
+                var i18n = localizeConfig.i18n,
+                    escapeHTML = $filter('escapeHTML');
                 return function (key, data, escape) {
                     var func = i18n[key],
                         escapedData;
@@ -48,19 +54,25 @@
                         if (escape) {
                             escapedData = {};
                             angular.forEach(data, function (value, key) {
-                                escapedData[key] = $filter('escapeHTML')(value);
+                                escapedData[key] = escapeHTML(value);
                             });
                         }
-                        return func(escapedData || data);
+                        return func(escapedData || data || {});
                     }
                     return key;
                 };
             }
         ])
 
+        .filter('localize', ['localize', function (localize) {
+            return localize;
+        }])
+
         .directive('localize', [
-            '$sanitize', '$filter', 'i18n',
-            function ($sanitize, $filter, i18n) {
+            '$sanitize', '$filter', 'localizeConfig',
+            function ($sanitize, $filter, localizeConfig) {
+                var i18n = localizeConfig.i18n,
+                    escapeHTML = $filter('escapeHTML');
                 return function (scope, elm, attrs) {
                     // Take the translation key from the element content
                     // if the localize attribute is empty:
@@ -73,7 +85,7 @@
                     if (func) {
                         if (isInput) {
                             update = function () {
-                                elm.attr('placeholder', func(attrs));
+                                attrs.$set('placeholder', func(attrs));
                             };
                         } else if (attrs.localize) {
                             // Localization is text only
@@ -85,14 +97,13 @@
                             data = {};
                             update = function (key, value) {
                                 if (key) {
-                                    data[key] = $filter('escapeHTML')(value);
+                                    data[key] = escapeHTML(value);
                                 }
                                 elm.html($sanitize(func(data)));
                             };
                         }
                         angular.forEach(attrs.$attr, function (attr, normAttr) {
-                            // Only observe non-directive data-attributes:
-                            if (/^data-(?!ng-|localize)/.test(attr)) {
+                            if (localizeConfig.observableAttrs.test(attr)) {
                                 attrs.$observe(
                                     normAttr,
                                     isInput || attrs.localize ? update :
@@ -110,11 +121,47 @@
                         // If there is no translation function,
                         // the key itself is the translation value:
                         if (isInput) {
-                            elm.attr('placeholder', key);
+                            attrs.$set('placeholder', key);
                         } else {
                             elm.text(key);
                         }
                     }
+                };
+            }
+        ])
+
+        .factory('localizeFactory', [
+            'localizeConfig',
+            function (localizeConfig) {
+                var i18n = localizeConfig.i18n;
+                return function () {
+                    var directiveObj = {
+                        link: function (scope, elm, attrs) {
+                            var name = directiveObj.name,
+                                target = name.charAt(8).toLowerCase() + name.slice(9),
+                                key = attrs[name],
+                                func = i18n[key],
+                                update,
+                                hasObservers;
+                            if (func) {
+                                update = function () {
+                                    attrs.$set(target, func(attrs));
+                                };
+                                angular.forEach(attrs.$attr, function (attr, normAttr) {
+                                    if (localizeConfig.observableAttrs.test(attr)) {
+                                        attrs.$observe(normAttr, update);
+                                        hasObservers = true;
+                                    }
+                                });
+                                if (!hasObservers) {
+                                    update();
+                                }
+                            } else {
+                                attrs.$set(target, key);
+                            }
+                        }
+                    };
+                    return directiveObj;
                 };
             }
         ]);

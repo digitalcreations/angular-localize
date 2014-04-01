@@ -19,10 +19,10 @@
                 return '1 & 2 < 3 > 2 & 1';
             },
             'Hello {name}!': function (data) {
-                return 'Hello ' + data.name + '!';
+                return 'Hallo ' + data.name + '!';
             },
             'Hello <strong>{name}</strong>!': function (data) {
-                return 'Hello <strong>' + data.name + '</strong>!';
+                return 'Hallo <strong>' + data.name + '</strong>!';
             }
         };
 
@@ -55,11 +55,11 @@
 
         });
 
-        describe('i18n service', function () {
+        describe('localizeConfig service', function () {
 
-            it('Should return the $window.i18n object', inject(
-                function (i18n) {
-                    expect(i18n).toBe(i18nMock);
+            it('Should return the $window.i18n object as property', inject(
+                function (localizeConfig) {
+                    expect(localizeConfig.i18n).toBe(i18nMock);
                 }
             ));
 
@@ -84,14 +84,77 @@
             it('Should replace translation placeholders with data argument values', inject(
                 function (localize) {
                     expect(localize('Hello {name}!', {name: 'Bob'}))
-                        .toBe('Hello Bob!');
+                        .toBe('Hallo Bob!');
+                }
+            ));
+
+            it('Should use an empty object if the data argument is not provided', inject(
+                function (localize) {
+                    expect(localize('Hello {name}!'))
+                        .toBe('Hallo undefined!');
                 }
             ));
 
             it('Should escape user data when the escape argument is true', inject(
                 function (localize) {
                     expect(localize('Hello {name}!', {name: '&<>'}, true))
-                        .toBe('Hello &amp;&lt;&gt;!');
+                        .toBe('Hallo &amp;&lt;&gt;!');
+                }
+            ));
+
+        });
+
+        describe('localize filter', function () {
+
+            it('Should return the localize service as filter', inject(
+                function ($filter, localize) {
+                    expect($filter('localize'))
+                        .toBe(localize);
+                }
+            ));
+
+            it('Should set the element text to the translation result', inject(
+                function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span>{{text | localize}}</span>'
+                    )($rootScope);
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('');
+                    $rootScope.text = 'Apples';
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('Äpfel');
+                }
+            ));
+
+            it('Should replace translation placeholders with object values', inject(
+                function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span>{{text | localize:user}}</span>'
+                    )($rootScope);
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('');
+                    $rootScope.text = 'Hello {name}!';
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('Hallo undefined!');
+                    $rootScope.user = {name: 'Bob'};
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('Hallo Bob!');
+                }
+            ));
+
+            it('Should escape user data passed to the translation function', inject(
+                function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span ng-bind-html="text | localize:user:true"></span>'
+                    )($rootScope);
+                    $rootScope.$digest();
+                    expect(element.html()).toBe('');
+                    $rootScope.text = 'Hello <strong>{name}</strong>!';
+                    $rootScope.$digest();
+                    expect(element.html()).toBe('Hallo <strong>undefined</strong>!');
+                    $rootScope.user = {name: '&<>'};
+                    $rootScope.$digest();
+                    expect(element.html()).toBe('Hallo <strong>&amp;&lt;&gt;</strong>!');
                 }
             ));
 
@@ -168,10 +231,10 @@
                         '<span data-name="{{user.name}}" localize="Hello {name}!"></span>'
                     )($rootScope);
                     $rootScope.$digest();
-                    expect(element.text()).toBe('Hello !');
+                    expect(element.text()).toBe('Hallo !');
                     $rootScope.user = {name: 'Bob'};
                     $rootScope.$digest();
-                    expect(element.text()).toBe('Hello Bob!');
+                    expect(element.text()).toBe('Hallo Bob!');
                 }
             ));
 
@@ -181,10 +244,10 @@
                         '<span data-name="{{user.name}}" localize>Hello <strong>{name}</strong>!</span>'
                     )($rootScope);
                     $rootScope.$digest();
-                    expect(element.html()).toBe('Hello <strong></strong>!');
+                    expect(element.html()).toBe('Hallo <strong></strong>!');
                     $rootScope.user = {name: '&<>'};
                     $rootScope.$digest();
-                    expect(element.html()).toBe('Hello <strong>&amp;&lt;&gt;</strong>!');
+                    expect(element.html()).toBe('Hallo <strong>&amp;&lt;&gt;</strong>!');
                 }
             ));
 
@@ -205,6 +268,66 @@
                     expect(element.attr('placeholder')).toBe('Bananas');
                 }
             ));
+
+        });
+
+        describe('localize factory', function () {
+
+            it('Should create attribute based localize directives', function () {
+                module(function ($compileProvider) {
+                    $compileProvider
+                        .directive('localizeTitle', function (localizeFactory) {
+                            return localizeFactory();
+                        })
+                        .directive('localizeSummary', function (localizeFactory) {
+                            return localizeFactory();
+                        });
+                });
+                inject(function ($compile, $rootScope) {
+                    var element1 = $compile(
+                            '<span localize-title="Bananas"></span>'
+                        )($rootScope),
+                        element2 = $compile(
+                            '<table localize-summary="Apples"></table>'
+                        )($rootScope);
+                    expect(element1.attr('title')).toBe('Bananas');
+                    expect(element2.attr('summary')).toBe('Äpfel');
+                });
+            });
+
+            it('Should create attribute based localize directives with multiple dashes', function () {
+                module(function ($compileProvider) {
+                    $compileProvider
+                        .directive('localizeDataContent', function (localizeFactory) {
+                            return localizeFactory();
+                        });
+                });
+                inject(function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span localize-data-content="Apples"></span>'
+                    )($rootScope);
+                    expect(element.attr('data-content')).toBe('Äpfel');
+                });
+            });
+
+            it('Should observe data-* attributes to update the translation result', function () {
+                module(function ($compileProvider) {
+                    $compileProvider
+                        .directive('localizeTitle', function (localizeFactory) {
+                            return localizeFactory();
+                        });
+                });
+                inject(function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span data-name="{{user.name}}" localize-title="Hello {name}!"></span>'
+                    )($rootScope);
+                    $rootScope.$digest();
+                    expect(element.attr('title')).toBe('Hallo !');
+                    $rootScope.user = {name: 'Bob'};
+                    $rootScope.$digest();
+                    expect(element.attr('title')).toBe('Hallo Bob!');
+                });
+            });
 
         });
 
