@@ -23,7 +23,8 @@
             },
             'Hello <strong>{name}</strong>!': function (data) {
                 return 'Hallo <strong>' + data.name + '</strong>!';
-            }
+            },
+            'Hello world': 'Hallo Welt'
         };
 
         beforeEach(function () {
@@ -102,6 +103,13 @@
                 }
             ));
 
+            it('Should return the i18n static translation', inject(
+                function (localize) {
+                    expect(localize('Hello world'))
+                        .toBe('Hallo Welt');
+                }
+            ));
+
         });
 
         describe('localize filter', function () {
@@ -123,6 +131,19 @@
                     $rootScope.text = 'Apples';
                     $rootScope.$digest();
                     expect(element.text()).toBe('Äpfel');
+                }
+            ));
+
+            it('Should set the element text to the static translation result', inject(
+                function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span>{{text | localize}}</span>'
+                    )($rootScope);
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('');
+                    $rootScope.text = 'Hello world';
+                    $rootScope.$digest();
+                    expect(element.text()).toBe('Hallo Welt');
                 }
             ));
 
@@ -186,6 +207,15 @@
                         '<span localize="Apples"></span>'
                     )($rootScope);
                     expect(element.text()).toBe('Äpfel');
+                }
+            ));
+
+            it('Should set the element text to the static translation result', inject(
+                function ($compile, $rootScope) {
+                    var element = $compile(
+                        '<span localize="Hello world"></span>'
+                    )($rootScope);
+                    expect(element.text()).toBe('Hallo Welt');
                 }
             ));
 
@@ -281,6 +311,9 @@
                         })
                         .directive('localizeSummary', function (localizeFactory) {
                             return localizeFactory();
+                        })
+                        .directive('localizeStatic', function (localizeFactory) {
+                            return localizeFactory();
                         });
                 });
                 inject(function ($compile, $rootScope) {
@@ -289,9 +322,13 @@
                         )($rootScope),
                         element2 = $compile(
                             '<table localize-summary="Apples"></table>'
+                        )($rootScope),
+                        element3 = $compile(
+                            '<table localize-static="Hello world"></table>'
                         )($rootScope);
                     expect(element1.attr('title')).toBe('Bananas');
                     expect(element2.attr('summary')).toBe('Äpfel');
+                    expect(element3.attr('static')).toBe('Hallo Welt');
                 });
             });
 
