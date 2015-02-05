@@ -51,6 +51,7 @@
                     var func = i18n[key],
                         escapedData;
                     if (func) {
+                        func = assertFunc(func);
                         if (escape) {
                             escapedData = {};
                             angular.forEach(data, function (value, key) {
@@ -83,6 +84,7 @@
                         update,
                         hasObservers;
                     if (func) {
+                        func = assertFunc(func);
                         if (isInput) {
                             update = function () {
                                 attrs.$set('placeholder', func(attrs));
@@ -144,6 +146,7 @@
                                 update,
                                 hasObservers;
                             if (func) {
+                                func = assertFunc(func);
                                 update = function () {
                                     attrs.$set(target, func(attrs));
                                 };
@@ -165,5 +168,16 @@
                 };
             }
         ]);
+
+    function assertFunc(func) {
+        var t = typeof func;
+        if (t === 'string') {
+            return function () { return func; };
+        } else if (t === 'function') {
+            return func;
+        }
+        // alternative for exception: function that returns func + ''
+        throw 'not a function';
+    }
 
 }());
