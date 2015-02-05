@@ -6,8 +6,8 @@
 
 - [Getting started](#getting-started)
     - [Module setup](#module-setup)
-    - [Translation functions](#translation-functions)
-        - [How to automatically create the translation functions](#how-to-automatically-create-the-translation-functions)
+    - [Translation mappings](#translation-mappings)
+        - [How to automatically create the translation mappings](#how-to-automatically-create-the-translation-mappings)
 - [Usage Examples](#usage-examples)
     - [localize directive](#localize-directive)
         - [Localize using the element content](#localize-using-the-element-content)
@@ -36,12 +36,13 @@ You can then include `angular-localize` after including its dependencies, [angul
 <script src="bower_components/angular-localize/angular-localize.js"></script>
 ```
 
-### Translation functions
-The `localize` module requires a map with translation functions.  
+### Translation mappings
+The `localize` module requires an object of translation mappings.  
 By convention, this is a global object variable called `i18n`, which must be available before the Angular application is initialized:
 
 ```js
-window.i18n = {
+window.i18n = {,
+    'Hello world!': 'Hallo Welt!',
     'Hello {name}!': function (data) {
         return 'Hallo ' + data.name + '!';
     }
@@ -49,7 +50,10 @@ window.i18n = {
 ```
 
 The `localize` module uses this map to lookup the translation results.  
-If no matching translation function is found, the key is used as the translation result.
+The values of the map can be either static translation strings or dynamic translation functions.  
+The translation functions are expected to return strings with the translation result.  
+An optional object with dynamic user data is passed as only argument to the translation functions.  
+If no matching mapping is found, the key is used as the translation result.
 
 Instead of storing the translation functions in a global object, it's also possible to decorate the `localizeConfig` service to override the `i18n` configuration property:
 
@@ -57,9 +61,7 @@ Instead of storing the translation functions in a global object, it's also possi
 angular.module('localize').config(['$provide', function ($provide) {
     $provide.decorator('localizeConfig', ['$delegate', function ($delegate) {
         $delegate.i18n = {
-            Apples: function () {
-                return 'Äpfel';
-            },
+            'Hello world!': 'Hallo Welt!',
             'Hello {name}!': function (data) {
                 return 'Hallo ' + data.name + '!';
             }
@@ -69,16 +71,13 @@ angular.module('localize').config(['$provide', function ($provide) {
 }]);
 ```
 
-The translation functions are expected to return strings with the translation result.  
-An optional object with dynamic user data is passed as only argument to the translation functions.
-
-#### How to automatically create the translation functions
-[grunt-locales](https://github.com/blueimp/grunt-locales), a plugin for the [Grunt](http://gruntjs.com/) task runner, provides command-line scripts to automate the creation of the translation functions.
+#### How to automatically create the translation mappings
+[grunt-locales](https://github.com/blueimp/grunt-locales), a plugin for the [Grunt](http://gruntjs.com/) task runner, provides command-line scripts to automate the creation of the translation mappings.
 
 [grunt-locales](https://github.com/blueimp/grunt-locales) parses `localize` attributes in HTML files as well as `localize` method calls in JS files and collects the parsed locale strings in JSON files for translation.  
-The translated JSON locale files are then compiled into JavaScript files containing the map of translation functions.
+The translated JSON locale files are then compiled into JavaScript files containing the object with the translation mappings.
 
-To support translation features like pluralization and gender selection, [grunt-locales](https://github.com/blueimp/grunt-locales) relies on Alex Sexton's [MessageFormat](https://github.com/SlexAxton/messageformat.js) library to parse the locale strings and compile the translation functions.
+To support translation features like pluralization and gender selection, [grunt-locales](https://github.com/blueimp/grunt-locales) relies on Alex Sexton's [MessageFormat](https://github.com/SlexAxton/messageformat.js) library to parse the locale strings and compile dynamic translation functions.
 
 ## Usage Examples
 

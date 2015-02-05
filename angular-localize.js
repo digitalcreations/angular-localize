@@ -51,7 +51,10 @@
                     var func = i18n[key],
                         escapedData;
                     if (func) {
-                        func = assertFunc(func);
+                        if (!func.call) {
+                            // Translation is not a function, assume a static string
+                            return func;
+                        }
                         if (escape) {
                             escapedData = {};
                             angular.forEach(data, function (value, key) {
@@ -80,11 +83,18 @@
                     var key = attrs.localize || elm.html(),
                         func = i18n[key],
                         isInput = /input|textarea/i.test(elm.prop('nodeName')),
+                        staticString,
                         data,
                         update,
                         hasObservers;
                     if (func) {
-                        func = assertFunc(func);
+                        if (!func.call) {
+                            // Translation is not a function, assume a static string
+                            staticString = func;
+                            func = function () {
+                                return staticString;
+                            };
+                        }
                         if (isInput) {
                             update = function () {
                                 attrs.$set('placeholder', func(attrs));
@@ -104,18 +114,20 @@
                                 elm.html($sanitize(func(data)));
                             };
                         }
-                        angular.forEach(attrs.$attr, function (attr, normAttr) {
-                            if (localizeConfig.observableAttrs.test(attr)) {
-                                attrs.$observe(
-                                    normAttr,
-                                    isInput || attrs.localize ? update :
-                                        function (value) {
-                                            update(normAttr, value);
-                                        }
-                                );
-                                hasObservers = true;
-                            }
-                        });
+                        if (!staticString) {
+                            angular.forEach(attrs.$attr, function (attr, normAttr) {
+                                if (localizeConfig.observableAttrs.test(attr)) {
+                                    attrs.$observe(
+                                        normAttr,
+                                        isInput || attrs.localize ? update :
+                                            function (value) {
+                                                update(normAttr, value);
+                                            }
+                                    );
+                                    hasObservers = true;
+                                }
+                            });
+                        }
                         if (!hasObservers) {
                             update();
                         }
@@ -146,16 +158,22 @@
                                 update,
                                 hasObservers;
                             if (func) {
-                                func = assertFunc(func);
-                                update = function () {
-                                    attrs.$set(target, func(attrs));
-                                };
-                                angular.forEach(attrs.$attr, function (attr, normAttr) {
-                                    if (localizeConfig.observableAttrs.test(attr)) {
-                                        attrs.$observe(normAttr, update);
-                                        hasObservers = true;
-                                    }
-                                });
+                                if (!func.call) {
+                                    // Translation is not a function, assume a static string
+                                    update = function () {
+                                        attrs.$set(target, func);
+                                    };
+                                } else {
+                                    update = function () {
+                                        attrs.$set(target, func(attrs));
+                                    };
+                                    angular.forEach(attrs.$attr, function (attr, normAttr) {
+                                        if (localizeConfig.observableAttrs.test(attr)) {
+                                            attrs.$observe(normAttr, update);
+                                            hasObservers = true;
+                                        }
+                                    });
+                                }
                                 if (!hasObservers) {
                                     update();
                                 }
@@ -168,16 +186,5 @@
                 };
             }
         ]);
-
-    function assertFunc(func) {
-        var t = typeof func;
-        if (t === 'string') {
-            return function () { return func; };
-        } else if (t === 'function') {
-            return func;
-        }
-        // alternative for exception: function that returns func + ''
-        throw 'not a function';
-    }
 
 }());
