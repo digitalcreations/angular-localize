@@ -24,7 +24,8 @@
             'Hello <strong>{name}</strong>!': function (data) {
                 return 'Hallo <strong>' + data.name + '</strong>!';
             },
-            'Hello world': 'Hallo Welt'
+            'Hello world': 'Hallo Welt',
+            'Bye, cruel {who}!': 'Auf Wiedersehen, {who}!'
         };
 
         beforeEach(function () {
@@ -86,6 +87,13 @@
                 function (localize) {
                     expect(localize('Hello {name}!', {name: 'Bob'}))
                         .toBe('Hallo Bob!');
+                }
+            ));
+
+            it('Should replace translation placeholders with data argument values without translation function', inject(
+                function (localize) {
+                    expect(localize('Bye, cruel {who}!', {who: 'World'}))
+                        .toBe('Auf Wiedersehen, World!');
                 }
             ));
 

@@ -45,7 +45,8 @@ window.i18n = {,
     'Hello world!': 'Hallo Welt!',
     'Hello {name}!': function (data) {
         return 'Hallo ' + data.name + '!';
-    }
+    },
+    'Bye, {name}': 'Auf Wiedersehen, {name}'
 };
 ```
 
@@ -64,7 +65,8 @@ angular.module('localize').config(['$provide', function ($provide) {
             'Hello world!': 'Hallo Welt!',
             'Hello {name}!': function (data) {
                 return 'Hallo ' + data.name + '!';
-            }
+            },
+            'Bye, {name}': 'Auf Wiedersehen, {name}'
         };
         return $delegate;
     }]);

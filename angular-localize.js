@@ -51,16 +51,21 @@
                     var func = i18n[key],
                         escapedData;
                     if (func) {
-                        if (!func.call) {
-                            // Translation is not a function, assume a static string
-                            return func;
-                        }
                         if (escape) {
                             escapedData = {};
                             angular.forEach(data, function (value, key) {
                                 escapedData[key] = escapeHTML(value);
                             });
                         }
+
+                        if (!func.call) {
+                            // Translation is not a function, assume a static string with placeholders
+                            angular.forEach(escapedData || data || {}, function (value, key) {
+                                func = func.replace('{' + key + '}', value);
+                            });
+                            return func;
+                        }
+                        
                         return func(escapedData || data || {});
                     }
                     return key;
